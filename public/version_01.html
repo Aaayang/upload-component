@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <!--
+        action="/upload"：指定后端上传接口
+        enctype="multipart/form-data"：将文件统一转成二进制的形式上传
+        method：以POST形式进行上传
+    -->
+    <form action="/upload" enctype="multipart/form-data" method="post">
+        <!-- name属性是必须的，给后端用 -->
+        <input type="file" name="fileInput" multiple>
+        <br>
+        <input type="submit" value="上传">
+    </form>
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <progress value="0" max="100" id="progress" style="height: 20px; width: 100%;" id="progress"></progress>
+    <br>
+    <br>
+    <input type="file" id="fileInput">
+    <button id="btn">上传文件</button>
+    <script>
+
+        let fileUpload = (function () {
+            function handleUpload() {
+                let oBtn = document.querySelector('#btn');
+                oBtn.addEventListener("click", function () {
+                    let oFileInput = document.querySelector('#fileInput'),
+                        oProgress = document.querySelector('#progress'),
+                        formData = new FormData(),
+                        xhr = new XMLHttpRequest;
+
+                    // 通过FormData对象可以组装一组用 XMLHttpRequest发送请求的键/值对
+                    formData.append('upload', oFileInput.files[0]);
+
+                    xhr.open('post', '/upload');
+                    xhr.upload.onprogress = function (ev) {
+                        let percent = (ev.loaded / ev.total) * 100;
+                        oProgress.value = percent;
+                    }
+                    xhr.send(formData);
+                });
+            }
+            function init() {
+                handleUpload();
+            }
+            return {
+                init: init
+            }
+        })();
+        fileUpload.init();
+
+    </script>
+</body>
+
+</html>

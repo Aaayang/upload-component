@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+
+<body>
+    <button id="btn1">上传按钮1</button>
+    <button id="btn2">上传按钮2</button>
+    <script>
+    let fileUpload = (function () {
+        function createIframe(opt) {
+            let oIframe = document.createElement('iframe');
+            oIframe.name = opt.iframeName;
+            oIframe.style.display = "none";// none
+            document.body.appendChild(oIframe);
+            return oIframe;
+        }
+        function createForm(opt) {
+            let oForm = document.createElement("form");
+            oForm.action = opt.action;
+            oForm.target = opt.iframeName;
+            oForm.enctype = "multipart/form-data";
+            oForm.method = "post";
+            oForm.style.display = "none";// none
+            
+            // 创建表单内的File框
+            let oFile = createFile(opt);
+
+            oForm.appendChild(oFile);
+            document.body.appendChild(oForm);
+
+            return {
+                oForm,
+                oFile
+            };
+        }
+        function createFile(opt) {
+            let oFile = document.createElement("input");
+            oFile.type = "file";
+            oFile.name = "fileInput";
+            oFile.multiple = true;
+            oFile.accept = opt.type.join(',');
+            return oFile;
+        }
+        function handleUpload(opt) {
+            // 创建iframe
+            let oIframe = createIframe(opt);
+            // 创建表单
+            let obj = createForm(opt);
+            // 插入完毕后执行点击
+            obj.oFile.click();
+            // 监听change，并执行submit提交
+            obj.oFile.addEventListener("change", () => obj.oForm.submit());
+
+            oIframe.addEventListener("load", opt.endFn);
+            oIframe.addEventListener("load", function() {
+                // 我们可不希望每点击一次按钮页面都多出上面创建的标签，所以拿到数据后把创建的标签删除
+                oIframe.remove();
+                obj.oForm.remove();
+            });
+        }
+
+        function init(opt) {
+            opt = opt || {}; // 可以设置下opt的默认值，做下容错处理
+            handleUpload(opt);
+        }
+        return {
+            init: init
+        }
+    })();
+
+    let oBtn1 = document.querySelector("#btn1"),
+        oBtn2 = document.querySelector("#btn2");
+
+    let uploadOpt = {
+        iframeName: 'iframe', // iframe name and form target
+        action: '/upload', // 上传接口
+        type: ['image/jpeg', 'image/png', 'video/mp4'], // 接收上传文件类型
+        endFn: function () { // 回调函数，接收上传成功后端返回的数据
+            let oPre = this.contentDocument.querySelector("pre");
+            let data = JSON.parse(oPre.innerHTML)
+            // 后端返回的数据data
+            console.log(data);
+        }
+    };
+
+    // 点击上传按钮
+    oBtn1.addEventListener("click", () => fileUpload.init(uploadOpt));
+    oBtn2.addEventListener("click", () => fileUpload.init(uploadOpt));
+    </script>
+</body>
+
+</html>
