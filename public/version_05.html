@@ -6,45 +6,141 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="ie=edge">
     <title>Document</title>
+    <style>
+    .btn{
+        display: inline-block;
+        padding: 6px 12px;
+        border: 1px solid #333;
+        cursor: pointer;
+        margin: 10px;
+    }
+    .progress-wrap{
+        width: 100%;
+        height: 5px;
+        position: fixed;
+        top: 0;
+        left: 0;
+    }
+    .progress-wrap .progress-con{
+        height: 100%;
+        position: absolute;
+        background-color: red;
+    }
+    </style>
 </head>
 
 <body>
-    <progress value="0" max="100" id="progress" style="height: 20px; width: 100%;" id="progress"></progress>
-    <br>
-    <br>
-    <input type="file" id="fileInput">
-    <button id="btn">上传文件</button>
     <script>
+    function UploadFile() {
+        this.oWrap = this.createEle("div");
+        this.oBtn = this.createEle("span");
+    }
+    // 创建标签的函数
+    UploadFile.prototype.createEle = function(ele) {
+        return document.createElement(ele)
+    };
+    // 初始化页面上的上传按钮
+    UploadFile.prototype.initBtn = function(opt) {
+        // btn
+        this.oBtn.className = "btn";
+        this.oBtn.innerHTML = "上传文件";
+        
+        opt.cls && (this.oWrap.className = opt.cls);
+        this.oWrap.appendChild(this.oBtn);
+        document.body.appendChild(this.oWrap);
+    };
+    // 创建FILE上传框，进度条
+    UploadFile.prototype.initHtml = function(opt) {
+        this.oFile = this.createEle("input");
+        this.oProgressWrap = this.createEle("div");
+        this.oProgressCon = this.createEle("span");
+        // file
+        this.oFile.type = "file";
+        this.oFile.style.display = "none";
+        opt.multiple && (this.oFile.multiple = opt.multiple);
+        
+        // progress
+        this.oProgressWrap.className = "progress-wrap";
+        this.oProgressCon.className = "progress-con";
+        this.oProgressWrap.appendChild(this.oProgressCon);
+        opt.top && (this.oProgressCon.style.top = opt.top + "px");
+        
+        this.oWrap.appendChild(this.oFile);
+        this.oWrap.appendChild(this.oProgressWrap);
+    };
+    // 用AJAX把数据传给后台
+    UploadFile.prototype.ajax = function(opt) {
+        let xhr = new XMLHttpRequest,
+            _this = this;
 
-        let fileUpload = (function () {
-            function handleUpload() {
-                let oBtn = document.querySelector('#btn');
-                oBtn.addEventListener("click", function () {
-                    let oFileInput = document.querySelector('#fileInput'),
-                        oProgress = document.querySelector('#progress'),
-                        formData = new FormData(),
-                        xhr = new XMLHttpRequest;
+        xhr.open('post', '/upload');
+        xhr.upload.addEventListener("progress", (ev) => {
+            let percent = (ev.loaded / ev.total) * 100 + "%";
+            this.oProgressCon.style.width = percent;
+        });
+        xhr.send(opt["formData"]);
 
-                    // 通过FormData对象可以组装一组用 XMLHttpRequest发送请求的键/值对
-                    formData.append('upload', oFileInput.files[0]);
-
-                    xhr.open('post', '/upload');
-                    xhr.upload.onprogress = function (ev) {
-                        let percent = (ev.loaded / ev.total) * 100;
-                        oProgress.value = percent;
-                    }
-                    xhr.send(formData);
-                });
+        xhr.addEventListener("readystatechange", () => {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                opt.cb && opt.cb(JSON.parse(xhr.responseText));
             }
-            function init() {
-                handleUpload();
-            }
-            return {
-                init: init
-            }
-        })();
-        fileUpload.init();
+        });
+    };
+    UploadFile.prototype.handle = function(opt) {
+        let _this = this;
+        this.oBtn.addEventListener("click", () => {
+            // 下次点击的时候把上次创建的删除
+            this.oFile && this.oFile.remove();
+            this.oProgressWrap && this.oProgressWrap.remove();
+            // 每次点击按钮的时候把该创建的创建了，也可以在初始化的时候一次性把事办齐
+            this.initHtml(opt);
+            
+            // 主动点击，弹出系统上传框
+            this.oFile.click();
+            
+            // 监听上传框
+            this.oFile.addEventListener("change", () => {
+                let formData = new FormData();
+                // 通过FormData对象可以组装一组用 XMLHttpRequest发送请求的键/值对
+                formData.append('upload', _this.oFile.files[0]);
+                opt["formData"] = formData;
+                this.ajax(opt);
+            });
+        });
+    };
+    UploadFile.prototype.init = function(opt) {
+        opt = opt || {};// 这里可以搞一下默认参数的配置
+        this.initBtn(opt);
+        this.handle(opt);
+    };
 
+    /*
+        参数说明:
+        top: 进度条距离窗口顶部距离
+        cls: 外包裹class名字
+        multiple: 是否支持多选
+        cb: 上传成功的回调
+        accept: 支持上传的文件格式（未做）
+        还有一些细节要处理：
+            例如上一个还没传完，我又点击了相同的上传按钮这时候前端进度该如何处理
+            当碰到很大的文件时，我们是否考虑切割上传
+            前端是不是最好也把上传预览做一下
+            
+        有空再来完善...
+    */
+    let btn1 = new UploadFile();
+    let btn2 = new UploadFile();
+    btn1.init({
+        top: 0,
+        cls: "wrap",
+        multiple: true,
+        cb: function(data) {
+            console.log(data);
+        }
+    });
+    btn2.init({
+        top: "20"
+    });
     </script>
 </body>
 
